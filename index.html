@@ -135,10 +135,99 @@ button{touch-action:manipulation}
 .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:40}
 .confetti i{position:absolute;top:-8%;font-style:normal;font-size:1.6rem;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(115vh) rotate(540deg)}}
+
+/* FUNZY: controles de privacidad y consentimiento */
+#fz-privacy-settings{position:fixed;right:10px;bottom:10px;z-index:48;background:#231f4d;
+ color:#fff;border:1px solid #ffffff55;border-radius:30px;padding:8px 12px;font-size:12px}
+#fz-consent{position:fixed;inset:0;z-index:100;background:#0009;display:flex;
+ align-items:flex-end;justify-content:center;padding:12px}
+#fz-consent[hidden]{display:none}
+#fz-consent-box{background:#231f4d;color:#fff;border:1px solid #ffffff40;border-radius:20px;
+ padding:20px;max-width:480px;width:100%;box-shadow:0 12px 40px #0008}
+#fz-consent-box h2{margin:0 0 10px;font-size:1.2rem}
+#fz-consent-box p{color:#eee;line-height:1.5;font-size:.95rem}
+#fz-consent-box .fz-actions{display:flex;gap:10px;margin-top:16px}
+#fz-consent-box .fz-actions button{flex:1;padding:12px 8px;border:0;border-radius:12px;
+ font-weight:800;font-size:.95rem}
+#fz-consent-accept{background:#ffc933;color:#14122b}
+#fz-consent-reject{background:#3b367a;color:#fff}
+#fz-consent-box details{margin-top:12px;color:#eee;font-size:.85rem;line-height:1.5}
+#fz-consent-box summary{cursor:pointer;text-decoration:underline}
+
 </style>
 </head>
 <body>
 <main id="app"></main>
+
+<button id="fz-privacy-settings" type="button" aria-label="Configurar estadísticas" hidden>Privacidad</button>
+<div id="fz-consent" role="dialog" aria-modal="true" aria-labelledby="fz-consent-title" hidden>
+ <div id="fz-consent-box">
+  <h2 id="fz-consent-title">🎮 Tu privacidad en FUNZY</h2>
+  <p>¿Nos permites utilizar Google Analytics para conocer cuántas personas visitan FUNZY y cuántas partidas se juegan? Solo activaremos estas estadísticas si aceptas. Puedes jugar igualmente si rechazas.</p>
+  <details><summary>Más información</summary>
+   <p>Google Analytics puede utilizar identificadores y tecnologías similares para generar estadísticas de uso. Al aceptar, se envían datos de navegación y eventos de juego a Google. No enviamos nombres de jugadores, cartas ni resultados individuales. Puedes cambiar tu elección con el botón «Privacidad».</p>
+  </details>
+  <div class="fz-actions">
+   <button id="fz-consent-reject" type="button">Rechazar</button>
+   <button id="fz-consent-accept" type="button">Aceptar</button>
+  </div>
+ </div>
+</div>
+
+
+<script>
+/* FUNZY / Google Analytics 4: solo se carga tras consentimiento */
+(function(){
+ const KEY='funzy_analytics_consent_v1';
+ const MEASUREMENT_ID='G-Z14TMF59BT';
+ let choice=null, initialized=false;
+ const dialog=document.getElementById('fz-consent');
+ const settings=document.getElementById('fz-privacy-settings');
+ const accept=document.getElementById('fz-consent-accept');
+ const reject=document.getElementById('fz-consent-reject');
+
+ function loadAnalytics(){
+  if(initialized)return;
+  initialized=true;
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=function(){window.dataLayer.push(arguments)};
+  window.gtag('js',new Date());
+  window.gtag('config',MEASUREMENT_ID,{send_page_view:true});
+  const script=document.createElement('script');
+  script.async=true;
+  script.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(MEASUREMENT_ID);
+  document.head.appendChild(script);
+ }
+ function setChoice(value){
+  choice=value;
+  try{localStorage.setItem(KEY,value)}catch(e){}
+  dialog.hidden=true;
+  settings.hidden=false;
+  if(value==='accepted'){window['ga-disable-'+MEASUREMENT_ID]=false;loadAnalytics();}
+  else if(initialized && typeof window.gtag==='function'){
+   window['ga-disable-'+MEASUREMENT_ID]=true;
+  }
+ }
+ function openDialog(){
+  dialog.hidden=false;
+  settings.hidden=true;
+  reject.focus();
+ }
+ accept.addEventListener('click',()=>setChoice('accepted'));
+ reject.addEventListener('click',()=>setChoice('rejected'));
+ settings.addEventListener('click',openDialog);
+ try{choice=localStorage.getItem(KEY)}catch(e){}
+ if(choice==='accepted')setChoice('accepted');
+ else if(choice==='rejected')setChoice('rejected');
+ else openDialog();
+ window.funzyTrack=function(name,params){
+  if(choice==='accepted'&&typeof window.gtag==='function'){
+   window.gtag('event',name,params||{});
+  }
+ };
+})();
+</script>
+
 <script>
 const RAW=[
 ["prof","Profesiones",`Médico,Profesor,Cocinero,Bombero,Policía,Peluquero,Camarero,Albañil,Piloto,Cantante,Fontanero,Veterinario,Electricista,Periodista,Arquitecto,Azafata,Carpintero,Panadero,Fotógrafo,Cartero,Notario,Sumiller,Taxidermista,Cerrajero,Domador,Soldador,Forense,Astrónomo,Controlador aéreo,Sastre,Abogado,Dentista,Enfermero,Farmacéutico,Psicólogo,Ingeniero,Mecánico,Pintor,Escultor,Jardinero,Carnicero,Pescadero,Taxista,Camionero,Marinero,Pastor,Agricultor,Minero,Leñador,Herrero,Alfarero,Relojero,Joyero,Zapatero,Modista,Tatuador,Maquillador,Presentador,Locutor,Actor,Bailarín,Mago,Payaso,Acróbata,Guardaespaldas,Socorrista,Entrenador personal,Árbitro,Futbolista,Torero,Jockey,Cirujano,Anestesista,Matrona,Fisioterapeuta,Oculista,Pediatra,Bibliotecario,Traductor,Intérprete,Diplomático,Juez,Fiscal,Registrador de la propiedad,Detective,Espía,Guardia civil,Astronauta,Buzo,Paleontólogo,Arqueólogo,Geólogo,Meteorólogo,Biólogo marino,Cartógrafo,Cazatalentos,Community manager,Youtuber,Programador,Hacker,Diseñador gráfico,Doblador,Guionista,Dramaturgo,Barista,Barman,Gondolero,Vidriero,Tapicero,Afilador,Apicultor,Quesero,Interiorista,Sumo sacerdote,Vigilante de seguridad`],
@@ -298,6 +387,9 @@ function config(){
  });
 }
 function newGame(){
+ if(window.funzyTrack)window.funzyTrack("partida_iniciada",{
+  numero_cartas:S.cfg.n,dificultad:S.cfg.d,duracion_turno:S.cfg.t
+ });
  ac();
  S.all=draw(S.cfg.n);S.deck=shuf(S.all);S.round=0;S.score=[0,0];S.rs=[[0,0],[0,0],[0,0]];S.team=0;S.idx=[0,0];
  intro();
@@ -423,6 +515,9 @@ function confetti(){
 }
 function final(){
  const [a,r]=S.score,w=a===r?-1:a>r?0:1;
+ if(window.funzyTrack)window.funzyTrack("partida_terminada",{
+  numero_cartas:S.cfg.n,dificultad:S.cfg.d
+ });
  document.body.style.setProperty("--tc",w<0?"var(--sol)":TC[w]);
  view(`<div class="hero"><div class="trophy">${w<0?"🤝":"🏆"}</div><div class="big">${w<0?"¡Empate!":"¡Gana el "+TEAMS[w]+"!"}</div><p style="color:#fffc">${a} – ${r}</p></div>${board(3)}
  <button class="btn" id="rp" style="margin-top:auto">Jugar otra vez</button>
